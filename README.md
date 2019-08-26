@@ -11,3 +11,7 @@ In order to show the ViewController :
     colorSelectorVC.delegate = self
     self.presentViewController(colorSelectorVC, animated: true, completion: nil)
 
+
+##### Preview
+
+![Preview with french translation](images/IMG_0524.jpg "Preview")
