@@ -22,7 +22,7 @@ class ViewController: UIViewController {
 
     @IBAction func showColorSelector() {
         let colorSelectorVC = JMMColorSelectorViewController.init(nibName: "JMMColorSelectorView", bundle: nil)
-        self.presentViewController(colorSelectorVC, animated: true, completion: nil)
+        self.present(colorSelectorVC, animated: true, completion: nil)
     }
     
 }

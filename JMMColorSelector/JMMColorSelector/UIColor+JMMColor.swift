@@ -134,7 +134,7 @@ public extension UIColor {
     //        get { }
     //    }
     
-    func checkColorComponent(value: CGFloat) -> Void {
+    func checkColorComponent(_ value: CGFloat) -> Void {
         if value < 0.0 || value > 1.0 {
             NSLog("[WARNING] UIColor+JMMColor | An exception occured : %s", ColorException.IncompatibleColorSpace.description())
         }

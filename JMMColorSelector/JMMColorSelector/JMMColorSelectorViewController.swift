@@ -97,7 +97,7 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
 
     // MARK: Initializers & VC Lifecycle
     
-    public override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: NSBundle?) {
+    public override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         shareSettingsAccrossDevices = false
         super.init(nibName:nibNameOrNil, bundle:nibBundleOrNil);
     }
@@ -123,46 +123,19 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
         // [self setupCollectionView];
     }
     
-    public override func viewWillAppear(animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
     
         self.customSetup()
         
-        //    [self loadLastStateAnimated:NO];
-        
         self.colorPreviewView?.alpha = CGFloat(0);
         
-        /*
-        NSLayoutConstraint *leftConstraint = self.colorSelectorView?.brightnessSlider?.LeadingConstraint;
-        NSLayoutConstraint *rightConstraint = self.colorSelectorView?.brightnessSlider?.TrailingConstraint;
-        
-        UIImage *lowBrightnessImage = [UIImage imageNamed:@"brightness-low"];
-        UIImage *highBrightnessImage = [UIImage imageNamed:@"brightness-high"];
-        if (lowBrightnessImage && highBrightnessImage) {
-        //        self.colorSelectorView?.brightnessSlider?.minimumValueImage = lowBrightnessImage;
-        //        self.colorSelectorView?.brightnessSlider?.maximumValueImage = highBrightnessImage;
-        
-        //        CGFloat decalage = self.colorSelectorView?.brightnessSlider?.minimumValueImage.size.width;
-        //        leftConstraint.constant = decalage;
-        //        rightConstraint.constant = - decalage;
-        } else {
-        leftConstraint.constant = 0;
-        rightConstraint.constant = 0;
-        NSLog(@"Images : 'low' is %@, 'high' is %@\n%s",(lowBrightnessImage?@"set":@"nil"),(highBrightnessImage?@"set":@"nil"),__PRETTY_FUNCTION__);
-        }
-        
-        
-        self.view.frame = self.parentViewController.view.bounds;
-        [self loadLastStateAnimated:NO];
-        
-        self.colorPreviewView.layer.cornerRadius = self.colorPreviewView.frame.size.width/2.0;
-        */
     } // -- end viewWill Appear
     
-    public override func viewDidAppear(animated: Bool) {
+    public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        self.loadLastStateAnimated(true) // ou bien on pourrait juste tout recharger off-screen
+        self.loadLastState(animated: true) // ou bien on pourrait juste tout recharger off-screen
         
         
         
@@ -176,13 +149,13 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
         }
         if (animated){
             let animDuration = 0.3, delay = 0.1
-            UIView.animateWithDuration(animDuration, delay: delay, options: .TransitionNone, animations:revealUIBlock , completion: nil)
+            UIView.animate(withDuration: animDuration, delay: delay, options: .TransitionNone, animations:revealUIBlock , completion: nil)
         } else {
             revealUIBlock()
         }
     }
 
-    override public func viewWillDisappear(animated: Bool) {
+    override public func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         //
         self.savePrefs()
@@ -191,33 +164,31 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
     
     
     
-    override public func willRotateToInterfaceOrientation(toInterfaceOrientation: UIInterfaceOrientation, duration duration:NSTimeInterval) {
-        super.willRotateToInterfaceOrientation(toInterfaceOrientation, duration:duration);
+    override public func willRotate(to toInterfaceOrientation: UIInterfaceOrientation, duration:TimeInterval) {
+        super.willRotate(to: toInterfaceOrientation, duration:duration);
         
         var bounds = self.view!.frame
         swap(&bounds.size.height, &bounds.size.width)
         
         let gradientViews: [UIView] = [self.colorSelectorView!.hueGradientView!, self.colorSelectorView!.saturationGradientView!, self.colorSelectorView!.brightnessGradientView!]
-//        let resizeView: UIView -> Void = {(aView: UIView)->Void in aView.layer.bounds = bounds; }
         
         CATransaction.begin();
-        CATransaction.setValue(NSNumber(double: duration), forKey:kCATransactionAnimationDuration);
+        CATransaction.setValue(NSNumber(value: duration), forKey:kCATransactionAnimationDuration);
         for someView in gradientViews {
-//            resizeView(someView)
             someView.layer.bounds = bounds
         }
         CATransaction.commit();
     }
     
     
-    override public func didRotateFromInterfaceOrientation(fromInterfaceOrientation: UIInterfaceOrientation) {
+    override public func didRotate(from fromInterfaceOrientation: UIInterfaceOrientation) {
 //        if #available(iOS, 7.0)
         if super.respondsToSelector(Selector.init("didRotateFromInterfaceOrientation")){
-            super.didRotateFromInterfaceOrientation(fromInterfaceOrientation);
+            super.didRotate(from: fromInterfaceOrientation);
         }
     
         self.colorSelectorView?.selectedColor = self.selectedColor!
-        self.loadLastStateAnimated(true);
+        self.loadLastState(animated: true);
     }
 
     
@@ -248,8 +219,8 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
     
     // MARK: Providing colors
     
-    public func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if collectionView.numberOfSections() == 1
+    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if collectionView.numberOfSections == 1
         {
             return self.colorsAtDisposal().count
         }
@@ -263,17 +234,17 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
         }
     }
     
-    private var cellRegistrationToken: dispatch_once_t = 0
-    public func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+    private lazy var cellRegistrationToken = 0
+    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cellIdentifier = "__JMM_CVCell_defaultCell"
-        dispatch_once(&cellRegistrationToken) { () -> Void in
-            collectionView.registerClass(UICollectionViewCell.self, forCellWithReuseIdentifier: cellIdentifier)
+        if cellRegistrationToken == 0 {
+            collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: cellIdentifier)
         }
         
-        let cell: UICollectionViewCell = collectionView.dequeueReusableCellWithReuseIdentifier(cellIdentifier, forIndexPath: indexPath)
+        let cell: UICollectionViewCell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath)
         cell.backgroundColor = self.colorsAtDisposal()[indexPath.row]
         
-        let squareConstraint = NSLayoutConstraint.init(item: cell, attribute: .Width, relatedBy: .Equal, toItem: cell, attribute: .Height, multiplier: 1.0, constant: 0)
+        let squareConstraint = NSLayoutConstraint.init(item: cell, attribute: .width, relatedBy: .equal, toItem: cell, attribute: .height, multiplier: 1.0, constant: 0)
         cell.addConstraint(squareConstraint);
         cell.layer.cornerRadius = cell.frame.size.height/2.0;
         
@@ -282,15 +253,15 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
     
     
     private static func defaultColors() -> [UIColor] {
-        let cocoaColors = [UIColor.magentaColor(),UIColor.cyanColor(),
-            UIColor.yellowColor(),UIColor.greenColor(),
-            UIColor.redColor(), UIColor.orangeColor(),
-            UIColor.blueColor(),UIColor.purpleColor(),
-            UIColor.brownColor(), UIColor.lightGrayColor()];
+        let cocoaColors = [UIColor.magenta, UIColor.cyan,
+            UIColor.yellow, UIColor.green,
+            UIColor.red, UIColor.orange,
+            UIColor.blue,UIColor.purple,
+            UIColor.brown, UIColor.lightGray];
         
         
         // Adding pastel colors
-        func pastelColorForColor(color: UIColor) -> UIColor {
+        func pastelColorForColor(_ color: UIColor) -> UIColor {
             var h: CGFloat = 0.0, b: CGFloat = 0.0
             color.getHue(&h, saturation: nil, brightness: &b, alpha: nil)
             let pastelSaturation: CGFloat = 0.5;
@@ -319,10 +290,10 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
         // completed by random colors (until the VC is regenerated)
         let nbRandomColors = 20
         let colorRange = 256;
-        for ( var i=0; i < nbRandomColors; ++i){
+        for _ in 0...nbRandomColors {
             let r = CGFloat(Int(arc4random()) % colorRange) / CGFloat(colorRange);
-            let g = CGFloat(random() % colorRange) / CGFloat(colorRange);
-            let b = CGFloat(random() % colorRange) / CGFloat(colorRange);
+            let g = CGFloat(Int(arc4random()) % colorRange) / CGFloat(colorRange);
+            let b = CGFloat(Int(arc4random()) % colorRange) / CGFloat(colorRange);
             let randomColor = UIColor(red:r, green: g, blue: b, alpha: 1.0);
             colorsForSession.append(randomColor);
         }
@@ -343,14 +314,14 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
     
     @IBAction private func notifyAndDismiss() -> Void {
 //        self.delegate.colorSelectorVC(self, chosenColor:self.chosenColor)
-        self.presentingViewController?.dismissViewControllerAnimated(true) {
+        self.presentingViewController?.dismiss(animated: true) {
             () -> Void in
             self.savePrefs()
         }
     }
     
     @IBAction private func silentDismiss() {
-        self.presentingViewController?.dismissViewControllerAnimated(true, completion:nil)
+        self.presentingViewController?.dismiss(animated: true, completion:nil)
     }
     
     
@@ -359,12 +330,7 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
     // MARK: Preferences
     
     
-    
-//    func loadLastState(animated animated: Bool){
-//    }
-    
-    
-    func loadLastStateAnimated(animated: Bool) {
+    func loadLastState(animated: Bool) {
         let color: UIColor! = self.lastSavedColor(JMMColorSelectorViewController._defaultColor)
         
         var teinte = CGFloat(0), saturation = CGFloat(0), luminosite = CGFloat(0)
@@ -377,7 +343,7 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
     
 
     func loadPrefs() {
-        let lastColor = lastSavedColor(UIColor.redColor())
+        let lastColor = lastSavedColor(UIColor.red)
         if let color = lastColor {
             self.colorSelectorView?.selectedColor = color
         }
@@ -388,7 +354,7 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
     }
     
     //
-    private static let _defaultColor = UIColor.redColor()
+    private static let _defaultColor = UIColor.red
     
     func saveSelectedColor(){
         var h = CGFloat(0), s = CGFloat(0), b = CGFloat(0), a = CGFloat(0)
@@ -401,13 +367,13 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
         let iA = Int(a * CGFloat(colorRange))
         let hsba: Int = iH | iS | iB | iA
         
-        self.saveObject(hsba, forKey: kLastHSBAColorAsIntKey)
+        self.saveObject(object: hsba as AnyObject, forKey: kLastHSBAColorAsIntKey)
     }
     
-    private func lastSavedColor(defaultValue: UIColor?) -> UIColor? {
+    private func lastSavedColor(_ defaultValue: UIColor?) -> UIColor? {
         var color: UIColor? = defaultValue
         
-        if let hsba = (self.loadObjectForKey(kLastHSBAColorAsIntKey) as! Int?){
+        if let hsba = (self.loadObjectForKey(key: kLastHSBAColorAsIntKey) as! Int?){
             let range = CGFloat(2^8 - 1)
             
             let a = CGFloat( hsba & 0xFF) / range
@@ -417,11 +383,11 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
             
             color = UIColor.init(hue: h, saturation: s, brightness: b, alpha: a)
         }
-        else if let colorDict = self.loadObjectForKey(kLastHSBAColorKey) {
-            let h: CGFloat = CGFloat( colorDict.floatForKey(kHueValueKey) )
-            let s = CGFloat( colorDict.floatForKey(kSaturationValueKey) )
-            let b = CGFloat( colorDict.floatForKey(kBrightnessValueKey) )
-            let a = CGFloat( colorDict.floatForKey(kAlphaValueKey))
+        else if let colorDict = self.loadObjectForKey(key: kLastHSBAColorKey) {
+            let h: CGFloat = CGFloat( colorDict.float(forKey: kHueValueKey) )
+            let s = CGFloat( colorDict.float(forKey: kSaturationValueKey) )
+            let b = CGFloat( colorDict.float(forKey: kBrightnessValueKey) )
+            let a = CGFloat( colorDict.float(forKey: kAlphaValueKey))
             color = UIColor.init(hue: h, saturation: s, brightness: b, alpha: a)
         }
         return color
@@ -442,17 +408,17 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
         }
         
         if self.shareSettingsAccrossDevices {
-            NSUbiquitousKeyValueStore.defaultStore().setObject(object, forKey: key)
+            NSUbiquitousKeyValueStore.default().set(object, forKey: key)
         } else {
-            NSUserDefaults.standardUserDefaults().setObject(object, forKey: key)
+            UserDefaults.standard.set(object, forKey: key)
         }
     }
     
     private func loadObjectForKey(key: String) -> AnyObject? {
         if self.shareSettingsAccrossDevices {
-            return NSUbiquitousKeyValueStore.defaultStore().objectForKey(key);
+            return NSUbiquitousKeyValueStore.default().object(forKey: key) as AnyObject;
         } else {
-            return NSUserDefaults.standardUserDefaults().objectForKey(key);
+            return UserDefaults.standard.object(forKey: key) as AnyObject;
         }
     }
     
@@ -505,111 +471,4 @@ public class JMMColorSelectorViewController : UIViewController , UICollectionVie
         
     }
 }
-
-
-/*
-@implementation ColorSelectorViewController {
-UIColor *initialColorSetting;
-
-NSMutableArray *colorsForSession;
-
-BOOL colorsInitializationDone;
-}
-
-@dynamic view;
-
-#define LAST_HUE @"kColorSelector-Last-Hue"
-#define LAST_SATURATION @"kColorSelector-Last-Saturation"
-#define LAST_BRIGHTNESS @"kColorSelector-Last-Brightness"
-
-//#define MAX_NBR_SavedColor 5
-//- (UIColor *)lastChosenColor;
-//- (void)saveColor:(JMSCColor *)color {
-//    NSMutableArray *savedColors;
-//    [savedColors addObject:color.asDictionary];
-//    if (savedColors.count > MAX_NBR_SavedColor) {
-//        [savedColors removeLastObject];
-//    }
-//}
-
-
-
-#pragma mark - Preferences
-
-#pragma mark -
-#pragma mark Properties
-
-#pragma mark Preparation du VC
-
-
-
-- (void)viewWillAppear:(BOOL)animated {
-[super viewWillAppear:animated];
-
-//    [self loadLastStateAnimated:NO];
-
-self.colorPreviewView.alpha = 0.0f;
-
-NSLayoutConstraint *leftConstraint = self.colorSelectorView?.brightnessSlider?LeadingConstraint;
-NSLayoutConstraint *rightConstraint = self.colorSelectorView?.brightnessSlider?TrailingConstraint;
-
-UIImage *lowBrightnessImage = [UIImage imageNamed:@"brightness-low"];
-UIImage *highBrightnessImage = [UIImage imageNamed:@"brightness-high"];
-if (lowBrightnessImage && highBrightnessImage) {
-//        self.colorSelectorView?.brightnessSlider?.minimumValueImage = lowBrightnessImage;
-//        self.colorSelectorView?.brightnessSlider?.maximumValueImage = highBrightnessImage;
-
-//        CGFloat decalage = self.colorSelectorView?.brightnessSlider?.minimumValueImage.size.width;
-//        leftConstraint.constant = decalage;
-//        rightConstraint.constant = - decalage;
-} else {
-leftConstraint.constant = 0;
-rightConstraint.constant = 0;
-NSLog(@"Images : 'low' is %@, 'high' is %@\n%s",(lowBrightnessImage?@"set":@"nil"),(highBrightnessImage?@"set":@"nil"),__PRETTY_FUNCTION__);
-}
-self.view.frame = self.parentViewController.view.bounds;
-[self loadLastStateAnimated:NO];
-self.colorPreviewView.layer.cornerRadius = self.colorPreviewView.frame.size.width/2.0;
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-[super viewDidAppear:animated];
-
-[self loadLastStateAnimated:NO];
-
-[UIView animateWithDuration:0.3 delay:0.1 options:UIViewAnimationOptionTransitionNone animations:^{
-self.colorSelectorView?.hueSlider?.alpha = 1.0f;
-self.colorSelectorView?.saturationSlider?.alpha = 1.0f;
-self.colorSelectorView?.brightnessSlider?.alpha = 1.0f;
-
-self.colorPreviewView.alpha = 1.0f;
-}
-completion:nil];
-}
-
-
-
-
-#pragma mark - Collection View -
-
-#pragma mark Delegation
-
-- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-
-[self setCursorPositionsForColor:[[self colorsAtDisposal] objectAtIndex:indexPath.row]];
-
-[self loadLastStateAnimated:YES];
-}
-
-
-#pragma mark Data sourcing
-
-- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-return [self colorsAtDisposal].count;
-}
-
-@end
-
-*/
-
 

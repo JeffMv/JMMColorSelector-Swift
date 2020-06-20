@@ -105,7 +105,7 @@ public class JMMColorSelectorView : UIView {
         self.brightnessGradientView?.layer.cornerRadius = (self.brightnessGradientView?.frame.size.height)! / 2.0;
         
 //        let bgColor = [[UIColor blueColor] colorWithAlphaComponent:0.2];
-        let bgColor = UIColor.clearColor();
+        let bgColor = UIColor.clear;
         self.hueGradientView?.backgroundColor = bgColor;
         self.saturationGradientView?.backgroundColor = bgColor;
         self.brightnessGradientView?.backgroundColor = bgColor;
@@ -168,7 +168,7 @@ public class JMMColorSelectorView : UIView {
             self.colorCompositionChanged()
         }
         get {
-            let defaultColor = UIColor.blackColor()
+            let defaultColor = UIColor.black
             if (currentColor==nil){
                 return defaultColor
             }
@@ -180,34 +180,34 @@ public class JMMColorSelectorView : UIView {
     
     public var hueComponent: Float? {
         get { return Float(self.selectedColor.getHueComponent()) }
-        set { self.selectedColor = self.selectedColor.colorWithHueComponent(CGFloat(newValue!)) }
+        set { self.selectedColor = self.selectedColor.colorWithHueComponent(hue: CGFloat(newValue!)) }
     }
     
     public var saturationComponent: Float? {
         get { return Float(self.selectedColor.getSaturationComponent()) }
-        set { self.selectedColor = self.selectedColor.colorWithSaturationComponent(CGFloat(newValue!)) }
+        set { self.selectedColor = self.selectedColor.colorWithSaturationComponent(saturation: CGFloat(newValue!)) }
     }
     
     public var brightnessComponent: Float? {
         get { return Float(self.selectedColor.getBrightnessComponent()) }
-        set { self.selectedColor = self.selectedColor.colorWithBrightnessComponent(CGFloat(newValue!)) }
+        set { self.selectedColor = self.selectedColor.colorWithBrightnessComponent(brightness: CGFloat(newValue!)) }
     }
     
     // MARK: RGB Color Properties
     
     public var redComponent: Float? {
         get { return Float(self.selectedColor.getRedComponent()) }
-        set { self.selectedColor = self.selectedColor.colorWithRedComponent(CGFloat(newValue!)) }
+        set { self.selectedColor = self.selectedColor.colorWithRedComponent(red: CGFloat(newValue!)) }
     }
     
     public var greenComponent: Float? {
         get { return Float(self.selectedColor.getGreenComponent()) }
-        set { self.selectedColor = self.selectedColor.colorWithGreenComponent(CGFloat(newValue!)) }
+        set { self.selectedColor = self.selectedColor.colorWithGreenComponent(green: CGFloat(newValue!)) }
     }
     
     public var blueComponent: Float? {
         get { return Float(self.selectedColor.getBlueComponent()) }
-        set { self.selectedColor = self.selectedColor.colorWithBlueComponent(CGFloat(newValue!)) }
+        set { self.selectedColor = self.selectedColor.colorWithBlueComponent(blue: CGFloat(newValue!)) }
     }
     
     public var alphaComponent: Float? /* {
@@ -286,7 +286,7 @@ public class JMMColorSelectorView : UIView {
         }
     }
     
-    private func sliderAtIndex(index: Int) -> UISlider? {
+    private func sliderAtIndex(_ index: Int) -> UISlider? {
         switch index {
         case 0:
             return self.firstSlider
@@ -418,12 +418,12 @@ public class JMMColorSelectorView : UIView {
     
     
  
-    private func hideTrackColorForSlider(slider: UISlider?) {
+    private func hideTrackColorForSlider(_ slider: UISlider?) {
         let imageMin: UIImage? = slider?.minimumValueImage;
         let imageMax: UIImage? = slider?.maximumValueImage;
         
-        slider?.minimumTrackTintColor = UIColor.clearColor()
-        slider?.maximumTrackTintColor = UIColor.clearColor()
+        slider?.minimumTrackTintColor = UIColor.clear
+        slider?.maximumTrackTintColor = UIColor.clear
         
         // restore the icons
         slider?.minimumValueImage = imageMin;
@@ -464,7 +464,7 @@ public class JMMColorSelectorView : UIView {
     // MARK: Slider's Gradient Layers
     
     
-    private func setGradientWithColors(colors: [UIColor], toView view:UIView?) {
+    private func setGradientWithColors(_ colors: [UIColor], toView view:UIView?) {
         guard let view = view  else {
             return
         }
@@ -479,15 +479,16 @@ public class JMMColorSelectorView : UIView {
         }
     }
     
-    private func gradientLayerForView(view: UIView, withColors colors:[UIColor]) -> CAGradientLayer {
+    private func gradientLayerForView(_ view: UIView, withColors colors:[UIColor]) -> CAGradientLayer {
         let layer: CAGradientLayer = CAGradientLayer.init();
         self.updateGradientLayer(layer, withColors:colors, forView:view);
     
         
-        var locations = [CGFloat]();
-    
-        for (var i=Int(0); i < colors.count; ++i) {
-            let value = CGFloat( CGFloat(1.0) / CGFloat(colors.count - 1) * CGFloat(i) );
+        var locations = [NSNumber]();
+        
+        for i in 0...colors.count {
+            let val = CGFloat(CGFloat(1.0) / CGFloat(colors.count - 1) * CGFloat(i));
+            let value = NSNumber(value:val)
             locations.append(value)
         }
         
@@ -499,7 +500,7 @@ public class JMMColorSelectorView : UIView {
         return layer;
     }
     
-    private func updateGradientLayer(gradientLayer: CAGradientLayer, withColors colors:[UIColor], forView view:UIView) -> Void {
+    private func updateGradientLayer(_ gradientLayer: CAGradientLayer, withColors colors:[UIColor], forView view:UIView) -> Void {
         let rect: CGRect = view.bounds;
         gradientLayer.frame = rect;
     
